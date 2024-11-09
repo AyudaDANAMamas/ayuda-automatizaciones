@@ -315,7 +315,7 @@ export const initialCollaboratorFormQuestions = [
   "¿Cuál es tu profesión?",
   "¿Cuál es tu formación y experiencia en el área maternoinfantil?",
   "Escribe el tipo de ayuda que puedes ofrecer (especialidad)",
-  "Escribe tu número de colegiado (opcional)",
+  "Escribe tu número de colegiado (para especialidad sanitaria)",
 ];
 
 export enum HelpSpecialities {

@@ -234,7 +234,7 @@ Descripción: ${descripcion}
     await ctx.reply(summaryMessage, {
       reply_markup: {
         inline_keyboard: [
-          [{ text: "Confirm", callback_data: "confirm_mother_registration" }],
+          [{ text: "Confirmar", callback_data: "confirm_mother_registration" }],
           [{ text: "Corregir", callback_data: "cancel_mother_registration" }],
         ],
       },
