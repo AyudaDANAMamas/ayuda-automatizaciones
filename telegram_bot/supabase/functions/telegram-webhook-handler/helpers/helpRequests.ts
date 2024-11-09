@@ -1,11 +1,18 @@
-import { getMother, sendMotherMenuToChatId, showMainMotherMenu } from "./mothers.ts";
-import { supabase } from "./supabase.ts";
+import { MAIN_PROFESSIONAL_CHAT_ID } from "../index.ts";
 import telegramBot from "./bot.ts";
 import { getCollaborator } from "./collaborators.ts";
-import { MAIN_PROFESSIONAL_CHAT_ID } from "../index.ts";
+import {
+  getMother,
+  sendMotherMenuToChatId,
+  showMainMotherMenu,
+} from "./mothers.ts";
+import { supabase } from "./supabase.ts";
 
 //#region Funciones CRUD para solicitudes de ayuda
-export async function saveHelpRequest(userId: number | undefined, answers: string[]): Promise<number | undefined> {
+export async function saveHelpRequest(
+  userId: number | undefined,
+  answers: string[]
+): Promise<number | undefined> {
   if (!userId || answers.length < 3) return;
 
   const [nivelUrgencia, especialidad, motivoConsulta] = answers;
@@ -29,7 +36,11 @@ export async function saveHelpRequest(userId: number | undefined, answers: strin
 }
 
 export async function getHelpRequest(helpRequestId: number) {
-  const { data, error } = await supabase.from("help_requests").select("*").eq("id", helpRequestId).single();
+  const { data, error } = await supabase
+    .from("help_requests")
+    .select("*")
+    .eq("id", helpRequestId)
+    .single();
 
   if (error) console.error("Error getting help request:", error);
 
@@ -126,7 +137,8 @@ export async function askHelpRequestQuestions(ctx: any, questionIndex: number) {
     }
   } else if (questionIndex === helpRequestQuestions.length) {
     // Enviando una confirmación para que la madre verifique los datos de su solicitud
-    const [nivelUrgencia, especialidad, motivoConsulta] = ctx.session.helpRequestAnswers;
+    const [nivelUrgencia, especialidad, motivoConsulta] =
+      ctx.session.helpRequestAnswers;
     const resumen = `Resumen de tu solicitud de ayuda:
     - Nivel de urgencia: ${nivelUrgencia}
     - Especialidad: ${especialidad}
@@ -165,11 +177,17 @@ export async function handleHelpRequestsTextCallbacks(ctx: any) {
     if (questionIndex === 0) {
       // Estamos esperando respuesta de un botón, no de un texto
       // Enviar un mensaje diciendo que se debe seleccionar una opción
-      await ctx.reply("Por favor, selecciona una opción pulsando en el botón ", createUrgencyKeyboard());
+      await ctx.reply(
+        "Por favor, selecciona una opción pulsando en el botón ",
+        createUrgencyKeyboard()
+      );
     } else if (questionIndex === 1) {
       // Estamos esperando respuesta de un botón, no de un texto
       // Enviar un mensaje diciendo que se debe seleccionar una opción
-      await ctx.reply("Por favor, selecciona una opción pulsando en el botón ", createSpecialitiesKeyboard());
+      await ctx.reply(
+        "Por favor, selecciona una opción pulsando en el botón ",
+        createSpecialitiesKeyboard()
+      );
     } else {
       // Estamos esperando respuesta de un texto
       ctx.session.helpRequestAnswers[questionIndex] = ctx.message.text;
@@ -185,7 +203,10 @@ export async function handleHelpRequestsButtonsCallbacks(ctx: any) {
   if (ctx.session.helpRequestQuestionIndex === 0) {
     console.log("Seleccionado botón de urgencia ", ctx.callbackQuery);
     if (!ctx.callbackQuery?.data.startsWith("urgency_")) {
-      await ctx.reply("Por favor, selecciona una opción válida del botón de urgencias ", createUrgencyKeyboard());
+      await ctx.reply(
+        "Por favor, selecciona una opción válida del botón de urgencias ",
+        createUrgencyKeyboard()
+      );
       return false;
     }
 
@@ -196,11 +217,15 @@ export async function handleHelpRequestsButtonsCallbacks(ctx: any) {
       urgencyContent = HelpUrgencyOptions.BAJO;
     }
 
-    ctx.session.helpRequestAnswers[ctx.session.helpRequestQuestionIndex] = urgencyContent;
+    ctx.session.helpRequestAnswers[ctx.session.helpRequestQuestionIndex] =
+      urgencyContent;
 
     // Show selected speciality and move to next question
     await ctx.reply(`Urgencia seleccionada: ${urgencyContent}`);
-    await askHelpRequestQuestions(ctx, ctx.session.helpRequestQuestionIndex + 1);
+    await askHelpRequestQuestions(
+      ctx,
+      ctx.session.helpRequestQuestionIndex + 1
+    );
 
     // Answer the callback query to remove loading state
     // await ctx.answerCallbackQuery();
@@ -212,7 +237,10 @@ export async function handleHelpRequestsButtonsCallbacks(ctx: any) {
   } else if (ctx.session.helpRequestQuestionIndex === 1) {
     console.log("Seleccionado botón de especialidad ", ctx.callbackQuery);
     if (!ctx.callbackQuery?.data.startsWith("speciality_")) {
-      await ctx.reply("Por favor, selecciona una opción ", createSpecialitiesKeyboard());
+      await ctx.reply(
+        "Por favor, selecciona una opción ",
+        createSpecialitiesKeyboard()
+      );
       return false;
     }
 
@@ -222,11 +250,15 @@ export async function handleHelpRequestsButtonsCallbacks(ctx: any) {
     if (!specialityContent) {
       specialityContent = HelpSpecialities.OTROS;
     }
-    ctx.session.helpRequestAnswers[ctx.session.helpRequestQuestionIndex] = specialityContent;
+    ctx.session.helpRequestAnswers[ctx.session.helpRequestQuestionIndex] =
+      specialityContent;
 
     // Show selected speciality and move to next question
     await ctx.reply(`Especialidad seleccionada: ${specialityContent}`);
-    await askHelpRequestQuestions(ctx, ctx.session.helpRequestQuestionIndex + 1);
+    await askHelpRequestQuestions(
+      ctx,
+      ctx.session.helpRequestQuestionIndex + 1
+    );
 
     // Answer the callback query to remove loading state
     // await ctx.answerCallbackQuery();
@@ -238,9 +270,14 @@ export async function handleHelpRequestsButtonsCallbacks(ctx: any) {
   }
 
   if (ctx.callbackQuery?.data === "confirm_help_request") {
-    const helpRequestId = await saveHelpRequest(ctx.from?.id, ctx.session.helpRequestAnswers);
+    const helpRequestId = await saveHelpRequest(
+      ctx.from?.id,
+      ctx.session.helpRequestAnswers
+    );
     await streamHelpRequest(helpRequestId);
-    await ctx.reply("Solicitud de ayuda confirmada y enviada. Pronto un profesional se pondrá en contacto contigo.");
+    await ctx.reply(
+      "Gracias por confiar en MamásDANA. En breve te contactará una profesional por chat individual.\n\nRecuerda que toda la atención que recibas por parte del profesional es GRATUITA Y VOLUNTARIA. Si el profesional te solicita algún tipo de pago en algún momento por favor contacta con madresbebesdana@gmail.com"
+    );
     ctx.session.helpRequestAnswers = [];
     ctx.session.helpRequestQuestionIndex = undefined;
 
@@ -259,7 +296,10 @@ export async function handleHelpRequestsButtonsCallbacks(ctx: any) {
   }
 
   if (ctx.callbackQuery?.data.startsWith("helpRequest_attend_")) {
-    const helpRequestId = ctx.callbackQuery.data.replace("helpRequest_attend_", "");
+    const helpRequestId = ctx.callbackQuery.data.replace(
+      "helpRequest_attend_",
+      ""
+    );
     await attendHelpRequest(ctx, helpRequestId);
   }
 }
@@ -269,7 +309,10 @@ export async function handleHelpRequestsButtonsCallbacks(ctx: any) {
 //#region Gestión de solicitudes de ayuda en tiempo real
 // const STREAM_HELP_REQUEST_CHAT_IDS = [412430132, 9150852, 280023];
 
-const STREAM_HELP_REQUEST_THREAD_IDS_MAP: Record<HelpSpecialities, { chatId: number; threadId: string }[]> = {
+const STREAM_HELP_REQUEST_THREAD_IDS_MAP: Record<
+  HelpSpecialities,
+  { chatId: number; threadId: string }[]
+> = {
   [HelpSpecialities.PSICOLOGIA_PERINATAL]: [
     {
       chatId: -1002266155232,
@@ -359,7 +402,11 @@ export async function streamHelpRequest(helpRequestId: number | undefined) {
     `*Nueva solicitud de ayuda*\n\n` +
     `*Nombre:* ${mother.nombre_completo}\n` +
     `*Nivel de urgencia:* ${helpRequest.nivel_urgencia} ${
-      helpRequest.nivel_urgencia === "Alto" ? "🚨" : helpRequest.nivel_urgencia === "Medio" ? "🟠" : "🟢"
+      helpRequest.nivel_urgencia === "Alto"
+        ? "🚨"
+        : helpRequest.nivel_urgencia === "Medio"
+        ? "🟠"
+        : "🟢"
     }\n` +
     `*Especialidad:* ${helpRequest.especialidad}\n` +
     `*Motivo de consulta:* ${helpRequest.motivo_consulta}`;
@@ -368,7 +415,8 @@ export async function streamHelpRequest(helpRequestId: number | undefined) {
   const speciality = helpRequest.especialidad;
 
   // Enviar el mensaje a los chats de streaming de la especialidad
-  const targetThreads = STREAM_HELP_REQUEST_THREAD_IDS_MAP[speciality as HelpSpecialities];
+  const targetThreads =
+    STREAM_HELP_REQUEST_THREAD_IDS_MAP[speciality as HelpSpecialities];
 
   if (!targetThreads) {
     // targetThreads = STREAM_HELP_REQUEST_THREAD_IDS_MAP[HelpSpecialities.OTROS];
@@ -380,14 +428,29 @@ export async function streamHelpRequest(helpRequestId: number | undefined) {
     threadId: string;
   }[] = [];
   for (const threadInfo of targetThreads) {
-    console.log("Sending message to thread", threadInfo.chatId, threadInfo.threadId);
-    const messageResponse = await telegramBot.api.sendMessage(threadInfo.chatId, message, {
-      message_thread_id: threadInfo.threadId,
-      parse_mode: "Markdown",
-      reply_markup: {
-        inline_keyboard: [[{ text: "Atender Solicitud", callback_data: `helpRequest_attend_${helpRequestId}` }]],
-      },
-    });
+    console.log(
+      "Sending message to thread",
+      threadInfo.chatId,
+      threadInfo.threadId
+    );
+    const messageResponse = await telegramBot.api.sendMessage(
+      threadInfo.chatId,
+      message,
+      {
+        message_thread_id: threadInfo.threadId,
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "Atender Solicitud",
+                callback_data: `helpRequest_attend_${helpRequestId}`,
+              },
+            ],
+          ],
+        },
+      }
+    );
     console.log("Message sent to thread", threadInfo.chatId, messageResponse);
     const messageId = messageResponse.message_id;
 
@@ -433,7 +496,10 @@ export async function attendHelpRequest(ctx: any, helpRequestId: number) {
     const mother = await getMother(helpRequest.mother_telegram_id);
 
     if (!mother) {
-      console.error("Mother not found when attending help request", helpRequest.mother_telegram_id);
+      console.error(
+        "Mother not found when attending help request",
+        helpRequest.mother_telegram_id
+      );
       await ctx.answerCallbackQuery();
       return;
     }
@@ -445,7 +511,10 @@ export async function attendHelpRequest(ctx: any, helpRequestId: number) {
         text: "No estás registrado como colaborador. Por favor, contacta con el bot o con nuestro soporte.",
         show_alert: true,
       });
-      console.warn("Collaborator not found when attending help request", userId);
+      console.warn(
+        "Collaborator not found when attending help request",
+        userId
+      );
       return;
     }
 
@@ -454,7 +523,10 @@ export async function attendHelpRequest(ctx: any, helpRequestId: number) {
         text: "No puedes atender solicitudes porque estás bloqueado. Por favor, contacta con el bot o con nuestro soporte.",
         show_alert: true,
       });
-      console.warn("Collaborator is blocked when attending help request", userId);
+      console.warn(
+        "Collaborator is blocked when attending help request",
+        userId
+      );
 
       try {
         // Eliminando al usuario del grupo
@@ -519,7 +591,10 @@ Puedes ponerte en contacto con él a través de su Telegram si no te ha contacta
 
       await sendMotherMenuToChatId(helpRequest.mother_telegram_id);
     } catch (messageError) {
-      console.error("Error sending messages to collaborator and mother:", messageError);
+      console.error(
+        "Error sending messages to collaborator and mother:",
+        messageError
+      );
       await ctx.answerCallbackQuery({
         text: "Hubo un problema al enviar mensajes. Revisa tus mensajes de Telegram.",
         show_alert: true,
@@ -529,8 +604,13 @@ Puedes ponerte en contacto con él a través de su Telegram si no te ha contacta
 
     // Intento de eliminar mensajes de streaming
     try {
-      console.log("Removing streaming messages", helpRequest.streaming_message_ids);
-      const messagesToRemove = JSON.parse(helpRequest.streaming_message_ids).messages;
+      console.log(
+        "Removing streaming messages",
+        helpRequest.streaming_message_ids
+      );
+      const messagesToRemove = JSON.parse(
+        helpRequest.streaming_message_ids
+      ).messages;
 
       for (const message of messagesToRemove) {
         const { chatId, messageId } = message;

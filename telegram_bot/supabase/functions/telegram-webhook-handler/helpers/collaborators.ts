@@ -10,7 +10,14 @@ export async function saveCollaborator(
 ): Promise<void> {
   if (!userId || answers.length < 5) return;
 
-  const [nombreCompleto, telefono, profesion, formacionExperiencia, tipoAyuda, numeroColegiado = null] = answers;
+  const [
+    nombreCompleto,
+    telefono,
+    profesion,
+    formacionExperiencia,
+    tipoAyuda,
+    numeroColegiado = null,
+  ] = answers;
 
   console.debug("Saving collaborator:", {
     userId,
@@ -39,9 +46,15 @@ export async function saveCollaborator(
   }
 }
 
-export async function checkCollaboratorExists(userId: number | undefined): Promise<boolean> {
+export async function checkCollaboratorExists(
+  userId: number | undefined
+): Promise<boolean> {
   if (!userId) return false;
-  const { data, error } = await supabase.from("collaborator").select("id").eq("telegram_id", userId).single();
+  const { data, error } = await supabase
+    .from("collaborator")
+    .select("id")
+    .eq("telegram_id", userId)
+    .single();
 
   if (error) {
     // If error.details contains "contains 0 rows" it means the collaborator doesn't exist yet
@@ -61,7 +74,11 @@ export async function checkCollaboratorExists(userId: number | undefined): Promi
 
 export async function getCollaborator(userId: number | undefined) {
   if (!userId) return null;
-  const { data, error } = await supabase.from("collaborator").select("*").eq("telegram_id", userId).single();
+  const { data, error } = await supabase
+    .from("collaborator")
+    .select("*")
+    .eq("telegram_id", userId)
+    .single();
   return data ?? null;
 }
 
@@ -75,26 +92,50 @@ export async function showCollaboratorDataMenu(ctx: any) {
   const collaborator = await getCollaborator(ctx.from?.id);
 
   if (!collaborator) {
-    await ctx.reply("No se encontraron tus datos. Asegúrate de estar registrado como colaborador.");
+    await ctx.reply(
+      "No se encontraron tus datos. Asegúrate de estar registrado como colaborador."
+    );
     return;
   }
 
   await ctx.reply("Aquí puedes ver y editar tus datos personales:", {
     reply_markup: {
       inline_keyboard: [
-        [{ text: `Nombre: ${collaborator.nombre_completo}`, callback_data: "edit_nombre_completo" }],
-        [{ text: `Teléfono: ${collaborator.telefono}`, callback_data: "edit_telefono" }],
-        [{ text: `Profesión: ${collaborator.profesion}`, callback_data: "edit_profesion" }],
+        [
+          {
+            text: `Nombre: ${collaborator.nombre_completo}`,
+            callback_data: "edit_nombre_completo",
+          },
+        ],
+        [
+          {
+            text: `Teléfono: ${collaborator.telefono}`,
+            callback_data: "edit_telefono",
+          },
+        ],
+        [
+          {
+            text: `Profesión: ${collaborator.profesion}`,
+            callback_data: "edit_profesion",
+          },
+        ],
         [
           {
             text: `Formación y experiencia: ${collaborator.formacion_experiencia}`,
             callback_data: "edit_formacion_experiencia",
           },
         ],
-        [{ text: `Especialidad: ${collaborator.tipo_ayuda}`, callback_data: "edit_tipo_ayuda" }],
         [
           {
-            text: `Número de colegiado: ${collaborator.numero_colegiado || "No especificado"}`,
+            text: `Especialidad: ${collaborator.tipo_ayuda}`,
+            callback_data: "edit_tipo_ayuda",
+          },
+        ],
+        [
+          {
+            text: `Número de colegiado: ${
+              collaborator.numero_colegiado || "No especificado"
+            }`,
             callback_data: "edit_numero_colegiado",
           },
         ],
@@ -115,7 +156,10 @@ export async function handleCollaboratorButtonsCallbacks(ctx: any) {
   if (ctx.session.collaboratorQuestionIndex === 4) {
     console.log("Seleccionado botón de especialidad ", ctx.callbackQuery);
     if (!ctx.callbackQuery?.data.startsWith("speciality_")) {
-      await ctx.reply("Por favor, selecciona una opción ", createSpecialitiesKeyboard());
+      await ctx.reply(
+        "Por favor, selecciona una opción ",
+        createSpecialitiesKeyboard()
+      );
       return false;
     }
 
@@ -124,11 +168,15 @@ export async function handleCollaboratorButtonsCallbacks(ctx: any) {
     if (!specialityContent) {
       specialityContent = HelpSpecialities.OTROS;
     }
-    ctx.session.collaboratorAnswers[ctx.session.collaboratorQuestionIndex] = specialityContent;
+    ctx.session.collaboratorAnswers[ctx.session.collaboratorQuestionIndex] =
+      specialityContent;
 
     // Show selected speciality and move to next question
     await ctx.reply(`Especialidad seleccionada: ${specialityContent}`);
-    await askCollaboratorFormQuestions(ctx, ctx.session.collaboratorQuestionIndex + 1);
+    await askCollaboratorFormQuestions(
+      ctx,
+      ctx.session.collaboratorQuestionIndex + 1
+    );
 
     // Answer the callback query to remove loading state
     // await ctx.answerCallbackQuery();
@@ -161,20 +209,31 @@ export async function handleCollaboratorButtonsCallbacks(ctx: any) {
       return;
     }
 
-    await saveCollaborator(ctx.from?.id, ctx.session.collaboratorAnswers, ctx.from?.username);
-    await ctx.reply("Formulario de colaborador completado. Gracias por ofrecer tu ayuda.");
+    await saveCollaborator(
+      ctx.from?.id,
+      ctx.session.collaboratorAnswers,
+      ctx.from?.username
+    );
+    await ctx.reply(
+      "Formulario de colaborador completado. Gracias por ofrecer tu ayuda."
+    );
 
     // Add telegram user to the group with id -1002266155232c
     try {
       // Use grammy
-      const chatLink = await telegramBot.api.createChatInviteLink("-1002266155232", { member_limit: 1 });
+      const chatLink = await telegramBot.api.createChatInviteLink(
+        "-1002266155232",
+        { member_limit: 1 }
+      );
       await ctx.reply(
-        "Por favor, únete al grupo de colaboradores para poder colaborar con el resto de profesionales. " +
+        "Gracias por formar parte de este equipo y cuidar la comunidad MamásDANA.\n\nTe añadimos al grupo de tu especialidad para que puedas atender las solicitudes de ayuda de las mamás.\n\n" +
           chatLink.invite_link
       );
     } catch (error) {
       console.error("Error adding user to group:", error);
-      await ctx.reply("Ha habido un error al añadirte al grupo. Por favor, contacta con el administrador.");
+      await ctx.reply(
+        "Ha habido un error al añadirte al grupo. Por favor, contacta con el administrador."
+      );
     }
 
     ctx.session.role = AvailableRoles.COLLABORATOR;
@@ -194,7 +253,9 @@ export async function handleCollaboratorButtonsCallbacks(ctx: any) {
 
   if (fieldMapping[choice]) {
     ctx.session.currentEditingField = fieldMapping[choice];
-    await ctx.reply(`Introduce el nuevo valor para ${fieldMapping[choice].replace("_", " ")}:`);
+    await ctx.reply(
+      `Introduce el nuevo valor para ${fieldMapping[choice].replace("_", " ")}:`
+    );
   }
 }
 
@@ -211,9 +272,13 @@ export async function handleCollaboratorTextCallbacks(ctx: any) {
 
     if (error) {
       console.error("Error al actualizar el campo:", error);
-      await ctx.reply("Hubo un error al actualizar el dato. Inténtalo de nuevo.");
+      await ctx.reply(
+        "Hubo un error al actualizar el dato. Inténtalo de nuevo."
+      );
     } else {
-      await ctx.reply(`El campo ${field.replace("_", " ")} ha sido actualizado exitosamente.`);
+      await ctx.reply(
+        `El campo ${field.replace("_", " ")} ha sido actualizado exitosamente.`
+      );
     }
 
     // Limpiar el estado de edición y mostrar el menú de datos actualizado
@@ -222,13 +287,19 @@ export async function handleCollaboratorTextCallbacks(ctx: any) {
     return;
   }
 
-  if (ctx.session.collaboratorQuestionIndex != undefined || ctx.session.collaboratorQuestionIndex != null) {
+  if (
+    ctx.session.collaboratorQuestionIndex != undefined ||
+    ctx.session.collaboratorQuestionIndex != null
+  ) {
     const questionIndex = ctx.session.collaboratorQuestionIndex;
 
     if (questionIndex === 4) {
       // Estamos esperando respuesta de un botón, no de un texto
       // Enviar un mensaje diciendo que se debe seleccionar una opción
-      await ctx.reply("Por favor, selecciona una opción pulsando en el botón ", createSpecialitiesKeyboard());
+      await ctx.reply(
+        "Por favor, selecciona una opción pulsando en el botón ",
+        createSpecialitiesKeyboard()
+      );
     } else {
       // Estamos esperando respuesta de un texto
       ctx.session.collaboratorAnswers[questionIndex] = ctx.message.text;
@@ -295,7 +366,10 @@ function createSpecialitiesKeyboard() {
 }
 
 // Función para hacer preguntas del formulario inicial para colaboradores
-export async function askCollaboratorFormQuestions(ctx: any, questionIndex: number) {
+export async function askCollaboratorFormQuestions(
+  ctx: any,
+  questionIndex: number
+) {
   if (questionIndex < initialCollaboratorFormQuestions.length) {
     ctx.session.collaboratorQuestionIndex = questionIndex;
     const question = initialCollaboratorFormQuestions[questionIndex];
@@ -308,8 +382,14 @@ export async function askCollaboratorFormQuestions(ctx: any, questionIndex: numb
     }
   } else if (questionIndex === initialCollaboratorFormQuestions.length) {
     // Enviar un mensaje de confirmación
-    const [nombreCompleto, telefono, profesion, formacionExperiencia, tipoAyuda, numeroColegiado] =
-      ctx.session.collaboratorAnswers;
+    const [
+      nombreCompleto,
+      telefono,
+      profesion,
+      formacionExperiencia,
+      tipoAyuda,
+      numeroColegiado,
+    ] = ctx.session.collaboratorAnswers;
     const summaryMessage = `Te estás registrando como un profesional que puede ofrecer ayuda. Aquí tienes un resumen de tus datos:
     
 Nombre: ${nombreCompleto}
@@ -324,8 +404,18 @@ Número de colegiado: ${numeroColegiado}
     await ctx.reply(summaryMessage, {
       reply_markup: {
         inline_keyboard: [
-          [{ text: "Confirmar", callback_data: "confirm_collaborator_registration" }],
-          [{ text: "Corregir", callback_data: "cancel_collaborator_registration" }],
+          [
+            {
+              text: "Confirmar",
+              callback_data: "confirm_collaborator_registration",
+            },
+          ],
+          [
+            {
+              text: "Corregir",
+              callback_data: "cancel_collaborator_registration",
+            },
+          ],
         ],
       },
     });

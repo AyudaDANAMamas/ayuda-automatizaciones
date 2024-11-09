@@ -1,4 +1,14 @@
-import { session, webhookCallback } from "https://deno.land/x/grammy@v1.8.3/mod.ts";
+import {
+  session,
+  webhookCallback,
+} from "https://deno.land/x/grammy@v1.8.3/mod.ts";
+import {
+  handleAdministrationButtonsCallbacks,
+  handleAdministrationTextCallbacks,
+  isAdministrator,
+  showAdministrationMenu,
+} from "./helpers/administration.ts";
+import telegramBot from "./helpers/bot.ts";
 import {
   askCollaboratorFormQuestions,
   checkCollaboratorExists,
@@ -6,7 +16,11 @@ import {
   handleCollaboratorTextCallbacks,
   showCollaboratorMenu,
 } from "./helpers/collaborators.ts";
-import { askHelpRequestQuestions, handleHelpRequestsButtonsCallbacks, handleHelpRequestsTextCallbacks } from "./helpers/helpRequests.ts";
+import {
+  askHelpRequestQuestions,
+  handleHelpRequestsButtonsCallbacks,
+  handleHelpRequestsTextCallbacks,
+} from "./helpers/helpRequests.ts";
 import {
   askMotherFormQuestions,
   checkMotherExists,
@@ -15,13 +29,6 @@ import {
   showMainMotherMenu,
 } from "./helpers/mothers.ts";
 import { supabase } from "./helpers/supabase.ts";
-import telegramBot from "./helpers/bot.ts";
-import {
-  handleAdministrationButtonsCallbacks,
-  handleAdministrationTextCallbacks,
-  isAdministrator,
-  showAdministrationMenu,
-} from "./helpers/administration.ts";
 
 export enum AvailableRoles {
   MOTHER,
@@ -45,7 +52,8 @@ export const MAIN_PROFESSIONAL_CHAT_ID = -1002266155232;
 export const BLACKLISTED_CHAT_IDS = [MAIN_PROFESSIONAL_CHAT_ID];
 
 export function isBlacklisted(ctx: any) {
-  return BLACKLISTED_CHAT_IDS.includes(ctx.from?.id);
+  console.log("Checking whitelist from ", ctx.chat?.id);
+  return BLACKLISTED_CHAT_IDS.includes(ctx.chat?.id);
 }
 
 export async function showRegistrationMainMenu(ctx: any) {
@@ -81,7 +89,11 @@ const initialSessionData: SessionData = {
 
 const supabaseSessionStorage = {
   async read(key: string): Promise<SessionData | undefined> {
-    const { data, error } = await supabase.from("telegram_grammy_sessions").select("*").eq("session_id", key).single();
+    const { data, error } = await supabase
+      .from("telegram_grammy_sessions")
+      .select("*")
+      .eq("session_id", key)
+      .single();
 
     if (error) {
       console.error("Error reading session from database:", error);
@@ -112,7 +124,10 @@ const supabaseSessionStorage = {
   },
 
   async delete(key: string): Promise<void> {
-    const { error } = await supabase.from("telegram_grammy_sessions").delete().eq("session_id", key);
+    const { error } = await supabase
+      .from("telegram_grammy_sessions")
+      .delete()
+      .eq("session_id", key);
 
     if (error) {
       console.error("Error deleting session from database:", error);
@@ -215,7 +230,10 @@ telegramBot.on("callback_query:data", async (ctx) => {
   }
 
   // Handlers for collaborator question callbacks
-  if (ctx.session.role === AvailableRoles.COLLABORATOR || ctx.session.collaboratorQuestionIndex !== undefined) {
+  if (
+    ctx.session.role === AvailableRoles.COLLABORATOR ||
+    ctx.session.collaboratorQuestionIndex !== undefined
+  ) {
     console.debug("Handling collaborator question callbacks");
     await handleCollaboratorButtonsCallbacks(ctx);
 
@@ -225,7 +243,9 @@ telegramBot.on("callback_query:data", async (ctx) => {
   if (choice === "role_madre") {
     console.debug("New user selected role madre");
 
-    await ctx.reply("Gracias. Vamos a completar el formulario inicial para crear la conexión madre-profesional.");
+    await ctx.reply(
+      "Gracias. Vamos a completar el formulario inicial para crear la conexión madre-profesional."
+    );
     await flushSessionForms(ctx); // Resetear los formularios en la sesión
     await askMotherFormQuestions(ctx, 0); // Inicia las preguntas para madre
   }
@@ -233,7 +253,9 @@ telegramBot.on("callback_query:data", async (ctx) => {
   if (choice === "role_colaborador") {
     console.debug("New user selected role colaborador");
 
-    await ctx.reply("Gracias por tu interés en colaborar. Vamos a completar el formulario de profesional.");
+    await ctx.reply(
+      "Gracias por tu interés en colaborar. Vamos a completar el formulario de profesional."
+    );
     await flushSessionForms(ctx);
     await askCollaboratorFormQuestions(ctx, 0); // Inicia las preguntas para colaborador
   }
@@ -257,12 +279,18 @@ telegramBot.on("message:text", async (ctx) => {
 
   // Primero, comprobar si se está rellenando algún formulario
 
-  if (ctx.session.collaboratorQuestionIndex != undefined || ctx.session.role === AvailableRoles.COLLABORATOR) {
+  if (
+    ctx.session.collaboratorQuestionIndex != undefined ||
+    ctx.session.role === AvailableRoles.COLLABORATOR
+  ) {
     console.debug("Handling collaborator text callbacks");
     await handleCollaboratorTextCallbacks(ctx);
   }
 
-  if (ctx.session.motherQuestionIndex != undefined || ctx.session.role === AvailableRoles.MOTHER) {
+  if (
+    ctx.session.motherQuestionIndex != undefined ||
+    ctx.session.role === AvailableRoles.MOTHER
+  ) {
     console.debug("Handling mother text callbacks");
     await handleMotherTextCallbacks(ctx);
   }
@@ -294,7 +322,9 @@ telegramBot.command("ayuda", async (ctx) => {
     }
   }
 
-  await ctx.reply("Primero te debes registrar como persona afectada en el sistema usando el comando /start.");
+  await ctx.reply(
+    "Primero te debes registrar como persona afectada en el sistema usando el comando /start."
+  );
 });
 
 telegramBot.command("menu", async (ctx) => {
@@ -316,7 +346,9 @@ telegramBot.command("menu", async (ctx) => {
     }
   }
 
-  await ctx.reply("Primero te debes registrar como persona afectada en el sistema usando el comando /start.");
+  await ctx.reply(
+    "Primero te debes registrar como persona afectada en el sistema usando el comando /start."
+  );
 });
 
 /* -------------------------------- Handlers -------------------------------- */
