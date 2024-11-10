@@ -29,7 +29,7 @@ export async function saveMother(
   answers: string[],
   telegramUsername: string | undefined
 ): Promise<void> {
-  if (!userId || answers.length < 6) return;
+  if (!userId) return;
 
   const [nombreCompleto, telefono, puebloAfectado, codigoPostal, descripcion] =
     answers;
@@ -44,7 +44,9 @@ export async function saveMother(
     telegram_username: telegramUsername,
   });
 
-  if (error) console.error("Error saving mother:", error);
+  console.error("Error saving mother:", error)
+
+  if (error)throw new Error(error)
 }
 
 export async function checkMotherExists(
@@ -113,7 +115,6 @@ export async function handleMotherButtonsCallbacks(ctx: any) {
   const fieldMapping: { [key: string]: string } = {
     edit_nombre_completo: "nombre_completo",
     edit_telefono: "telefono",
-    edit_direccion: "calle_numero_piso",
     edit_pueblo: "pueblo_afectado",
     edit_codigo_postal: "codigo_postal",
     edit_descripcion: "descripcion_dana",
@@ -148,13 +149,25 @@ export async function handleMotherButtonsCallbacks(ctx: any) {
     }
 
     // Si no hay más preguntas, guardar respuestas y cambiar el rol a madre
-    await saveMother(
-      ctx.from?.id,
-      ctx.session.motherAnswers,
-      ctx.from?.username
-    ); // Guardar respuestas en la base de datos
+    try {
+
+      console.log("Saving mother ", ctx.from?.id, ctx.session.motherAnswers, ctx.from?.username)
+      await saveMother(
+        ctx.from?.id,
+        ctx.session.motherAnswers,
+        ctx.from?.username
+      ); // Guardar respuestas en la base de datos
+      await showRegistrationMainMenu(ctx);
+    } catch (error) {
+      console.error("Error saving mother:", error);
+      await ctx.reply(
+        "Ha habido un problema al guardar tus datos. Por favor, contacta con el soporte e inténtalo de nuevo."
+      );
+      return;
+    }
+
     await ctx.reply(
-      "Formulario completado. Ahora puedes solicitar ayuda desde el menu abajo. Si necesitas cualquier cosa, puedes pedirmelo con el escribiendo /ayuda o contactando con nosotros!"
+      "Gracias por confiar en MamásDANA!, ya estás registrada. Ahora puedes solicitar ayuda desde el menu abajo. Si necesitas cualquier cosa, puedes pedirmelo con el escribiendo /ayuda o contactando con nosotros!"
     );
     ctx.session.role = AvailableRoles.MOTHER;
     ctx.session.motherQuestionIndex = undefined;
@@ -216,7 +229,6 @@ export async function askMotherFormQuestions(ctx: any, questionIndex: number) {
     const [
       nombreCompleto,
       telefono,
-      calleNumeroPiso,
       puebloAfectado,
       codigoPostal,
       descripcion,
@@ -225,7 +237,6 @@ export async function askMotherFormQuestions(ctx: any, questionIndex: number) {
     
 Nombre: ${nombreCompleto}
 Teléfono: ${telefono}
-Dirección: ${calleNumeroPiso}
 Pueblo afectado: ${puebloAfectado}
 Código Postal: ${codigoPostal}
 Descripción: ${descripcion}
@@ -324,12 +335,6 @@ export async function showMotherDataMenu(ctx: any) {
           {
             text: `Teléfono: ${mother.telefono}`,
             callback_data: "edit_telefono",
-          },
-        ],
-        [
-          {
-            text: `Dirección: ${mother.calle_numero_piso}`,
-            callback_data: "edit_direccion",
           },
         ],
         [
