@@ -270,11 +270,18 @@ export async function handleHelpRequestsButtonsCallbacks(ctx: any) {
   }
 
   if (ctx.callbackQuery?.data === "confirm_help_request") {
-    const helpRequestId = await saveHelpRequest(
-      ctx.from?.id,
-      ctx.session.helpRequestAnswers
-    );
-    await streamHelpRequest(helpRequestId);
+    try {
+      const helpRequestId = await saveHelpRequest(
+        ctx.from?.id,
+        ctx.session.helpRequestAnswers
+      );
+      await streamHelpRequest(helpRequestId);
+    } catch (error) {
+      // console.error("Error saving help request:", error);
+      await ctx.reply("Ha habido un problema al guardar tu solicitud. Por favor, contacta con el soporte e inténtalo de nuevo.")
+    }
+
+    
     await ctx.reply(
       "Gracias por confiar en MamásDANA. En breve te contactará una profesional por chat individual.\n\nRecuerda que toda la atención que recibas por parte del profesional es GRATUITA Y VOLUNTARIA. Si el profesional te solicita algún tipo de pago en algún momento por favor contacta con madresbebesdana@gmail.com"
     );
@@ -300,6 +307,7 @@ export async function handleHelpRequestsButtonsCallbacks(ctx: any) {
       "helpRequest_attend_",
       ""
     );
+    console.log("Attending help request", helpRequestId);
     await attendHelpRequest(ctx, helpRequestId);
   }
 }

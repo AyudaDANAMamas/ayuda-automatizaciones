@@ -3,10 +3,9 @@ import {
   webhookCallback,
 } from "https://deno.land/x/grammy@v1.8.3/mod.ts";
 import {
-  handleAdministrationButtonsCallbacks,
   handleAdministrationTextCallbacks,
   isAdministrator,
-  showAdministrationMenu,
+  showAdministrationMenu
 } from "./helpers/administration.ts";
 import telegramBot from "./helpers/bot.ts";
 import {
@@ -199,22 +198,25 @@ telegramBot.command("start", async (ctx) => {
 
 // Manejo de las respuestas a botones
 telegramBot.on("callback_query:data", async (ctx) => {
-  if (isBlacklisted(ctx)) {
-    return;
-  }
+  
 
   console.debug("Received callback query");
   console.debug("Session:", ctx.session);
   console.debug("Callback data:", ctx.callbackQuery?.data);
+  
+  /*if (isBlacklisted(ctx)) {
+    console.log("Callback query from blacklisted user", ctx.callbackQuery?.from.id);
+    return;
+  }*/
 
   const choice = ctx.callbackQuery?.data;
 
   // Gestión de administración
-  if (isAdministrator(ctx)) {
+  /* if (isAdministrator(ctx)) {
     await handleAdministrationButtonsCallbacks(ctx);
 
     return;
-  }
+  } */
 
   // Handlers for mother question callbacks
   if (
